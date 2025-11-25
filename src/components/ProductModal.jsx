@@ -1,212 +1,376 @@
 import { useEffect, useState } from "react";
 
+import * as z from "zod";
+
+const initFormData = {
+  id: "",
+  title: "",
+  description: "",
+  category: "",
+  price: "0",
+  discountPercentage: "0",
+  rating: "0",
+  stock: "0",
+  tags: "",
+  brand: "",
+  sku: "",
+  weight: "0",
+  minimumOrderQuantity: "0",
+  thumbnail: "",
+};
+
+// ProductModal Component
 const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
   const isDelete = mode === "delete";
 
-  const [formData, setFormData] = useState({
-    id: "",
-    title: "",
-    description: "",
-    category: "",
-    price: "",
-    discountPercentage: "",
-    rating: "",
-    stock: "",
-    tags: "",
-    brand: "",
-    sku: "",
-    weight: "",
-    minimumOrderQuantity: "",
-    thumbnail: "",
+  const [formData, setFormData] = useState(initFormData);
+
+  const ProductSchema = z.object({
+    id: z.any(),
+
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+    category: z.string().min(1, "Category is required"),
+
+    price: z
+      .string()
+      .min(1, "Price is required")
+      .transform((val) => Number(val)),
+
+    discountPercentage: z
+      .string()
+      .min(1, "Discount Percentage is required")
+      .transform((val) => Number(val)),
+
+    rating: z
+      .string()
+      .min(1, "Rating is required")
+      .transform((val) => Number(val)),
+
+    stock: z
+      .string()
+      .min(1, "Stock is required")
+      .transform((val) => Number(val)),
+
+    weight: z
+      .string()
+      .min(1, "Weight is required")
+      .transform((val) => Number(val)),
+
+    minimumOrderQuantity: z
+      .string()
+      .min(1, "Minimum Order Quantity is required")
+      .transform((val) => Number(val)),
+
+    tags: z.union([
+      z.string().min(1, "Tags is required"),
+      z.array(z.string()).min(1, "Tags array must have at least 1 item"),
+    ]),
+
+    brand: z.string().min(1, "Brand is required"),
+    sku: z.string().min(1, "SKU is required"),
+    thumbnail: z.string().min(1, "Thumbnail URL is required"),
   });
+
   useEffect(() => {
-    if (product && !isDelete) {
+    if (product && mode === "edit") {
       setFormData({
         id: product.id || "",
         title: product.title || "",
         description: product.description || "",
         category: product.category || "",
-        price: product.price || "",
-        discountPercentage: product.discountPercentage || "",
-        rating: product.rating || "",
-        stock: product.stock || "",
+        price: String(product.price) || "",
+        discountPercentage: String(product.discountPercentage) || "",
+        rating: String(product.rating) || "",
+        stock: String(product.stock) || "",
         tags: product.tags || "",
         brand: product.brand || "",
         sku: product.sku || "",
-        weight: product.weight || "",
-        minimumOrderQuantity: product.minimumOrderQuantity || "",
+        weight: String(product.weight) || "",
+        minimumOrderQuantity: String(product.minimumOrderQuantity) || "",
         thumbnail: product.thumbnail || "",
       });
+    } else if (mode === "create") {
+      setFormData(initFormData);
     }
-  }, [isDelete, product]);
+  }, [product, mode]);
+
+  const handleConfirm = () => {
+    if (mode === "delete") {
+      onConfirm(product.id);
+    } else {
+      const result = ProductSchema.safeParse(formData);
+      console.log(result);
+      if (!result.success) {
+        result.error;
+      } else {
+        onConfirm(formData);
+        result.data;
+      }
+    }
+  };
 
   if (!open) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-xl w-[600px] max-h-[90vh] overflow-y-auto shadow-lg">
-        <h2 className="text-xl font-bold mb-4">
-          {mode === "delete"
-            ? "Xóa sản phẩm"
-            : mode === "edit"
-            ? "Sửa sản phẩm"
-            : "Thêm sản phẩm"}
-        </h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl">
+          <h2 className="text-2xl font-bold">
+            {mode === "delete"
+              ? "Xóa sản phẩm"
+              : mode === "edit"
+              ? "Sửa sản phẩm"
+              : "Thêm sản phẩm"}
+          </h2>
+        </div>
 
-        {!isDelete ? (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className="input"
-                value={formData.title}
-                placeholder="Title"
-                name="title"
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.category}
-                placeholder="Category"
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-              />
+        <div className="p-6">
+          {!isDelete ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Tên sản phẩm
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.title}
+                    placeholder="Nhập tên sản phẩm"
+                    name="title"
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                  />
+                </div>
 
-              <input
-                className="input"
-                value={formData.price}
-                placeholder="Price"
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.discountPercentage}
-                placeholder="Discount %"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    discountPercentage: e.target.value,
-                  })
-                }
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Danh mục
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.category}
+                    placeholder="Nhập danh mục"
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
+                  />
+                </div>
 
-              <input
-                className="input"
-                value={formData.rating}
-                placeholder="Rating"
-                onChange={(e) =>
-                  setFormData({ ...formData, rating: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.stock}
-                placeholder="Stock"
-                onChange={(e) =>
-                  setFormData({ ...formData, stock: e.target.value })
-                }
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Giá
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.price ?? ""}
+                    placeholder="0.00"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                  />
+                </div>
 
-              <input
-                className="input"
-                value={formData.brand}
-                placeholder="Brand"
-                onChange={(e) =>
-                  setFormData({ ...formData, brand: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.sku}
-                placeholder="SKU"
-                onChange={(e) =>
-                  setFormData({ ...formData, sku: e.target.value })
-                }
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Giảm giá (%)
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.discountPercentage ?? ""}
+                    placeholder="0"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        discountPercentage: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-              <input
-                className="input"
-                value={formData.weight}
-                placeholder="Weight"
-                onChange={(e) =>
-                  setFormData({ ...formData, weight: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.minimumOrderQuantity}
-                placeholder="Min Order Qty"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    minimumOrderQuantity: e.target.value,
-                  })
-                }
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Đánh giá
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.rating ?? ""}
+                    placeholder="0.0"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({ ...formData, rating: e.target.value })
+                    }
+                  />
+                </div>
 
-              <input
-                className="input"
-                value={formData.tags}
-                placeholder="Tags (comma separated)"
-                onChange={(e) =>
-                  setFormData({ ...formData, tags: e.target.value })
-                }
-              />
-              <input
-                className="input"
-                value={formData.thumbnail}
-                placeholder="Thumbnail (url)"
-                onChange={(e) =>
-                  setFormData({ ...formData, thumbnail: e.target.value })
-                }
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Tồn kho
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.stock}
+                    placeholder="0"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({ ...formData, stock: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Thương hiệu
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.brand}
+                    placeholder="Nhập thương hiệu"
+                    onChange={(e) =>
+                      setFormData({ ...formData, brand: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    SKU
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.sku}
+                    placeholder="Nhập SKU"
+                    onChange={(e) =>
+                      setFormData({ ...formData, sku: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Trọng lượng
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.weight ?? ""}
+                    placeholder="0"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({ ...formData, weight: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Số lượng tối thiểu
+                  </label>
+                  <input
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={formData.minimumOrderQuantity ?? ""}
+                    placeholder="1"
+                    type="number"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        minimumOrderQuantity: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tags (phân cách bằng dấu phẩy)
+                </label>
+                <input
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  value={formData.tags}
+                  placeholder="tag1, tag2, tag3"
+                  onChange={(e) =>
+                    setFormData({ ...formData, tags: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  URL Hình ảnh
+                </label>
+                <input
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  value={formData.thumbnail}
+                  placeholder="https://example.com/image.jpg"
+                  onChange={(e) =>
+                    setFormData({ ...formData, thumbnail: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Mô tả
+                </label>
+                <textarea
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                  value={formData.description}
+                  placeholder="Nhập mô tả sản phẩm"
+                  rows="4"
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                ></textarea>
+              </div>
+
+              {formData.thumbnail && (
+                <div className="mt-6">
+                  <label className="text-sm font-medium text-gray-700 block mb-2">
+                    Xem trước
+                  </label>
+                  <img
+                    src={formData.thumbnail}
+                    className="w-48 h-48 object-cover rounded-lg mx-auto border-4 border-gray-100 shadow-md"
+                    alt="Preview"
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-6">
+              <div className="mb-4 text-gray-700 text-lg">
+                Bạn có chắc chắn muốn xóa sản phẩm này?
+              </div>
+              <div className="font-bold text-2xl text-gray-900 mb-4">
+                {product.title}
+              </div>
+              {product.thumbnail && (
+                <img
+                  src={product.thumbnail}
+                  className="w-56 h-56 object-cover rounded-xl mx-auto shadow-lg border-4 border-gray-100"
+                  alt={product.title}
+                />
+              )}
             </div>
+          )}
+        </div>
 
-            <textarea
-              className="input mt-3 w-full h-20"
-              value={formData.description}
-              placeholder="Description"
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-            ></textarea>
-
-            {/* PREVIEW IMAGE */}
-            {formData.thumbnail && (
-              <img
-                src={formData.thumbnail}
-                className="w-40 h-40 object-cover rounded mx-auto mt-3"
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <div className="mb-2 text-gray-700">
-              Bạn có chắc chắn muốn xóa sản phẩm này?
-            </div>
-            <div className="font-bold text-lg">{product.title}</div>
-            {product.thumbnail && (
-              <img
-                src={product.thumbnail}
-                className="w-40 h-40 object-cover rounded mx-auto mt-4"
-              />
-            )}
-          </>
-        )}
-
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-end gap-3 mt-5">
-          <button className="px-4 py-1.5 bg-gray-300 rounded" onClick={onClose}>
+        <div className="flex justify-end gap-3 p-6 bg-gray-50 rounded-b-2xl border-t border-gray-200">
+          <button
+            className="px-6 py-2.5 cursor-pointer bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            onClick={onClose}
+          >
             Hủy bỏ
           </button>
           <button
-            onClick={() => {
-              isDelete ? onConfirm(product.id) : onConfirm(formData);
-            }}
-            className="px-4 py-1.5 bg-blue-600 text-white rounded"
+            // onClick={() => {
+            //   isDelete ? onConfirm(product.id) : onConfirm(formData);
+            // }}
+            onClick={handleConfirm}
+            className="px-6 py-2.5 cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
           >
             Đồng ý
           </button>

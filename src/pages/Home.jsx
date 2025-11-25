@@ -11,16 +11,28 @@ import ProductModal from "../components/ProductModal";
 import Loading from "../components/Loading";
 
 function Home() {
-  const { data: products, isLoading, refetch } = useGetProductsQuery();
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = 10;
+
+  const {
+    data: products,
+    isLoading,
+    refetch,
+  } = useGetProductsQuery({ page: currentPage });
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [deleteProduct] = useDeleteProductMutation();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   const [modal, setModal] = useState({
     open: false,
     mode: "create",
     data: {},
   });
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    console.log("Current Page:", page);
+  };
 
   const openEdit = (product) => {
     setModal({ open: true, mode: "edit", data: product });
@@ -65,25 +77,140 @@ function Home() {
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      closeModal();
     }
-
-    closeModal();
   };
 
-  if (isLoading || isCreating || isUpdating) return <Loading />;
+  if (isLoading || isCreating || isUpdating || isDeleting) return <Loading />;
 
   return (
-    <>
-      <button onClick={openCreate}>Thêm sản phẩm</button>
-      <div className="grid grid-cols-3 gap-4 p-4">
-        {products.items.map((product) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            onEdit={openEdit}
-            onDelete={openDelete}
-          />
-        ))}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Quản lý sản phẩm
+            </h1>
+            <p className="text-gray-600">Quản lý danh sách sản phẩm của bạn</p>
+          </div>
+          <button
+            onClick={openCreate}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          >
+            <span className="text-xl">+</span>
+            Thêm sản phẩm
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.items.map((product) => (
+            <ProductItem
+              key={product.id}
+              product={{
+                ...product,
+                tags: !Array.isArray(product.tags)
+                  ? JSON.parse(product.tags)
+                  : product.tags,
+              }}
+              onEdit={openEdit}
+              onDelete={openDelete}
+            />
+          ))}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center items-center gap-2 mt-8">
+          {/* Previous Button */}
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              currentPage === 1
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 shadow-sm hover:shadow-md"
+            }`}
+          >
+            ← Trước
+          </button>
+
+          {/* Page Numbers */}
+          <div className="flex gap-2">
+            {/* First Page */}
+            {currentPage > 3 && (
+              <>
+                <button
+                  onClick={() => handlePageChange(1)}
+                  className="w-10 h-10 rounded-lg bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium shadow-sm hover:shadow-md transition-all"
+                >
+                  1
+                </button>
+                {currentPage > 4 && (
+                  <span className="w-10 h-10 flex items-center justify-center text-gray-400">
+                    ...
+                  </span>
+                )}
+              </>
+            )}
+
+            {/* Page Range */}
+            {[...Array(totalPages)].map((_, index) => {
+              const page = index + 1;
+              const showPage =
+                page === currentPage ||
+                page === currentPage - 1 ||
+                page === currentPage + 1 ||
+                page === currentPage - 2 ||
+                page === currentPage + 2;
+
+              if (!showPage) return null;
+
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                    currentPage === page
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110"
+                      : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 shadow-sm hover:shadow-md"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+
+            {/* Last Page */}
+            {currentPage < totalPages - 2 && (
+              <>
+                {currentPage < totalPages - 3 && (
+                  <span className="w-10 h-10 flex items-center justify-center text-gray-400">
+                    ...
+                  </span>
+                )}
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  className="w-10 h-10 rounded-lg bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium shadow-sm hover:shadow-md transition-all"
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              currentPage === totalPages
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 shadow-sm hover:shadow-md"
+            }`}
+          >
+            Sau →
+          </button>
+        </div>
       </div>
 
       <ProductModal
@@ -93,7 +220,7 @@ function Home() {
         onClose={closeModal}
         onConfirm={handleConfirm}
       />
-    </>
+    </div>
   );
 }
 
