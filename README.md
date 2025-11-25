@@ -1,16 +1,54 @@
-# React + Vite
+# Product Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ứng dụng quản lý sản phẩm với React, Redux Toolkit, và RTK Query.
 
-Currently, two official plugins are available:
+## Tính năng
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- ✨ CRUD sản phẩm (Thêm, Sửa, Xóa, Xem)
+- 📄 Phân trang
+- ✅ Validation với Zod
+- 🎨 UI responsive với Tailwind CSS
 
-## React Compiler
+## Công nghệ
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+- React 19, Redux Toolkit, RTK Query
+- Tailwind CSS 4, Zod, Axios, React Toastify
+- Vite
 
-## Expanding the ESLint configuration
+## Cài đặt
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# Clone và cài đặt
+npm install
+
+# Chạy development
+npm run dev
+
+# Build production
+npm run build
+
+```
+
+## Deploy Vercel
+
+[Xem demo](https://day-41-two.vercel.app/)
+
+## API Endpoint
+
+Base URL: `https://api01.f8team.dev/api`
+
+- `GET /products?page={page}` - Danh sách sản phẩm
+- `POST /products` - Tạo mới
+- `PUT /products/{id}` - Cập nhật
+- `DELETE /products/{id}` - Xóa
+
+## Cấu trúc
+
+```
+src/
+├── components/      # ProductItem, ProductModal, Loading
+├── pages/          # Home
+├── services/       # API (RTK Query)
+├── features/       # Redux slices
+└── utils/          # Axios config
+```
