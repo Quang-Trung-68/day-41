@@ -123,7 +123,6 @@ const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
       return;
     } else {
       const result = ProductSchema.safeParse(formData);
-      console.log(result);
       if (!result.success) {
         const formattedErrors = {};
 

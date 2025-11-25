@@ -15,7 +15,6 @@ import Loading from "../components/Loading";
 
 function Home() {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 10;
 
   const {
     data: products,
@@ -26,6 +25,8 @@ function Home() {
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
+  const totalPages = products?.pagination.last_page || 1;
+
   const [modal, setModal] = useState({
     open: false,
     mode: "create",
@@ -34,7 +35,6 @@ function Home() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    console.log("Current Page:", page);
   };
 
   const openEdit = (product) => {
@@ -56,7 +56,6 @@ function Home() {
   const handleConfirm = async (formData) => {
     try {
       if (modal.mode === "create") {
-        console.log(formData);
         await createProduct({
           ...formData,
           tags: formData.tags.split(","),
@@ -65,8 +64,6 @@ function Home() {
         closeModal();
         await refetch({ force: true });
       } else if (modal.mode === "edit") {
-        console.log("Updating...");
-        console.log(formData);
         await updateProduct({
           ...formData,
           tags:
@@ -78,7 +75,6 @@ function Home() {
         closeModal();
         await refetch({ force: true });
       } else {
-        console.log(formData);
         await deleteProduct(formData);
         toast.success("Xóa sản phẩm thành công!");
         closeModal();
