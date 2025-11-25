@@ -1,4 +1,7 @@
 import { useState } from "react";
+
+import { ToastContainer, toast } from "react-toastify";
+
 import {
   useCreateProductMutation,
   useDeleteProductMutation,
@@ -58,6 +61,8 @@ function Home() {
           ...formData,
           tags: formData.tags.split(","),
         });
+        toast.success("Tạo sản phẩm thành công!");
+        closeModal();
         await refetch({ force: true });
       } else if (modal.mode === "edit") {
         console.log("Updating...");
@@ -69,16 +74,20 @@ function Home() {
               ? formData.tags.split(",")
               : formData.tags,
         });
+        toast.success("Cập nhật sản phẩm thành công!");
+        closeModal();
         await refetch({ force: true });
       } else {
         console.log(formData);
         await deleteProduct(formData);
+        toast.success("Xóa sản phẩm thành công!");
+        closeModal();
         await refetch({ force: true });
       }
     } catch (error) {
-      console.log(error);
-    } finally {
       closeModal();
+      toast.error("Đã xảy ra lỗi khi thực hiện, vui lòng thử lại sau!");
+      console.log(error);
     }
   };
 
@@ -220,6 +229,7 @@ function Home() {
         onClose={closeModal}
         onConfirm={handleConfirm}
       />
+      <ToastContainer />
     </div>
   );
 }

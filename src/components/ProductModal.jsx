@@ -24,55 +24,68 @@ const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
   const isDelete = mode === "delete";
 
   const [formData, setFormData] = useState(initFormData);
+  const [errors, setErrors] = useState({});
 
   const ProductSchema = z.object({
     id: z.any(),
 
-    title: z.string().min(1, "Title is required"),
-    description: z.string().min(1, "Description is required"),
-    category: z.string().min(1, "Category is required"),
+    title: z.string().min(1, "Tên sản phẩm là bắt buộc"),
+    description: z.string().min(1, "Mô tả sản phẩm là bắt buộc"),
+    category: z.string().min(1, "Danh mục là bắt buộc"),
 
     price: z
       .string()
-      .min(1, "Price is required")
-      .transform((val) => Number(val)),
+      .min(1, "Giá là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val > 0, { message: "Giá phải lớn hơn 0" }),
 
     discountPercentage: z
       .string()
-      .min(1, "Discount Percentage is required")
-      .transform((val) => Number(val)),
+      .min(1, "Phần trăm giảm giá là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val >= 0, { message: "Giảm giá không được âm" }),
 
     rating: z
       .string()
-      .min(1, "Rating is required")
-      .transform((val) => Number(val)),
+      .min(1, "Đánh giá là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val >= 0, { message: "Đánh giá không được âm" }),
 
     stock: z
       .string()
-      .min(1, "Stock is required")
-      .transform((val) => Number(val)),
+      .min(1, "Tồn kho là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val >= 0, { message: "Tồn kho không được âm" }),
 
     weight: z
       .string()
-      .min(1, "Weight is required")
-      .transform((val) => Number(val)),
+      .min(1, "Trọng lượng là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val > 0, { message: "Trọng lượng phải lớn hơn 0" }),
 
     minimumOrderQuantity: z
       .string()
-      .min(1, "Minimum Order Quantity is required")
-      .transform((val) => Number(val)),
+      .min(1, "Số lượng tối thiểu là bắt buộc")
+      .transform((val) => Number(val))
+      .refine((val) => val >= 1, {
+        message: "Số lượng tối thiểu phải lớn hơn hoặc bằng 1",
+      }),
 
     tags: z.union([
-      z.string().min(1, "Tags is required"),
-      z.array(z.string()).min(1, "Tags array must have at least 1 item"),
+      z.string().min(1, "Tags là bắt buộc"),
+      z.array(z.string()).min(1, "Mảng tags phải có ít nhất 1 phần tử"),
     ]),
 
-    brand: z.string().min(1, "Brand is required"),
-    sku: z.string().min(1, "SKU is required"),
-    thumbnail: z.string().min(1, "Thumbnail URL is required"),
+    brand: z.string().min(1, "Thương hiệu là bắt buộc"),
+    sku: z.string().min(1, "SKU là bắt buộc"),
+    thumbnail: z
+      .string()
+      .min(1, "URL hình ảnh là bắt buộc")
+      .url("URL hình ảnh không hợp lệ"),
   });
 
   useEffect(() => {
+    setErrors({});
     if (product && mode === "edit") {
       setFormData({
         id: product.id || "",
@@ -95,17 +108,34 @@ const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
     }
   }, [product, mode]);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setErrors({ ...errors, [name]: "" });
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleConfirm = () => {
     if (mode === "delete") {
       onConfirm(product.id);
+      return;
     } else {
       const result = ProductSchema.safeParse(formData);
       console.log(result);
       if (!result.success) {
-        result.error;
+        const formattedErrors = {};
+
+        result.error.issues.forEach((issue) => {
+          const field = issue.path[0];
+          formattedErrors[field] = issue.message;
+        });
+
+        setErrors(formattedErrors);
+        return;
       } else {
         onConfirm(formData);
-        result.data;
       }
     }
   };
@@ -129,201 +159,138 @@ const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
           {!isDelete ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Tên sản phẩm
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.title}
-                    placeholder="Nhập tên sản phẩm"
-                    name="title"
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Danh mục
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.category}
-                    placeholder="Nhập danh mục"
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Giá
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.price ?? ""}
-                    placeholder="0.00"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Giảm giá (%)
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.discountPercentage ?? ""}
-                    placeholder="0"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        discountPercentage: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Đánh giá
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.rating ?? ""}
-                    placeholder="0.0"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({ ...formData, rating: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Tồn kho
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.stock}
-                    placeholder="0"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({ ...formData, stock: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Thương hiệu
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.brand}
-                    placeholder="Nhập thương hiệu"
-                    onChange={(e) =>
-                      setFormData({ ...formData, brand: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    SKU
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.sku}
-                    placeholder="Nhập SKU"
-                    onChange={(e) =>
-                      setFormData({ ...formData, sku: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Trọng lượng
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.weight ?? ""}
-                    placeholder="0"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({ ...formData, weight: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Số lượng tối thiểu
-                  </label>
-                  <input
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    value={formData.minimumOrderQuantity ?? ""}
-                    placeholder="1"
-                    type="number"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        minimumOrderQuantity: e.target.value,
-                      })
-                    }
-                  />
-                </div>
+                {[
+                  {
+                    label: "Tên sản phẩm",
+                    name: "title",
+                    type: "text",
+                    placeholder: "Nhập tên sản phẩm",
+                  },
+                  {
+                    label: "Danh mục",
+                    name: "category",
+                    type: "text",
+                    placeholder: "Nhập danh mục",
+                  },
+                  {
+                    label: "Giá",
+                    name: "price",
+                    type: "number",
+                    placeholder: "0.00",
+                  },
+                  {
+                    label: "Giảm giá (%)",
+                    name: "discountPercentage",
+                    type: "number",
+                    placeholder: "0",
+                  },
+                  {
+                    label: "Đánh giá",
+                    name: "rating",
+                    type: "number",
+                    placeholder: "0.0",
+                  },
+                  {
+                    label: "Tồn kho",
+                    name: "stock",
+                    type: "number",
+                    placeholder: "0",
+                  },
+                  {
+                    label: "Thương hiệu",
+                    name: "brand",
+                    type: "text",
+                    placeholder: "Nhập thương hiệu",
+                  },
+                  {
+                    label: "SKU",
+                    name: "sku",
+                    type: "text",
+                    placeholder: "Nhập SKU",
+                  },
+                  {
+                    label: "Trọng lượng",
+                    name: "weight",
+                    type: "number",
+                    placeholder: "0",
+                  },
+                  {
+                    label: "Số lượng tối thiểu",
+                    name: "minimumOrderQuantity",
+                    type: "number",
+                    placeholder: "1",
+                  },
+                ].map((field) => (
+                  <div className="space-y-2" key={field.name}>
+                    <label className="text-xl pl-3 font-medium text-gray-700">
+                      {field.label}
+                    </label>
+                    <input
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                      name={field.name}
+                      type={field.type}
+                      value={formData[field.name] ?? ""}
+                      placeholder={field.placeholder}
+                      onChange={handleChange}
+                    />
+                    {errors[field.name] && (
+                      <p className="text-red-500 text-sm">
+                        {errors[field.name]}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-xl pl-3 font-medium text-gray-700">
                   Tags (phân cách bằng dấu phẩy)
                 </label>
                 <input
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  name="tags"
                   value={formData.tags}
                   placeholder="tag1, tag2, tag3"
-                  onChange={(e) =>
-                    setFormData({ ...formData, tags: e.target.value })
-                  }
+                  onChange={handleChange}
                 />
+                {errors["tags"] && (
+                  <p className="text-red-500 text-sm">{errors["tags"]}</p>
+                )}
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-xl pl-3 font-medium text-gray-700">
                   URL Hình ảnh
                 </label>
                 <input
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  name="thumbnail"
                   value={formData.thumbnail}
                   placeholder="https://example.com/image.jpg"
-                  onChange={(e) =>
-                    setFormData({ ...formData, thumbnail: e.target.value })
-                  }
+                  onChange={handleChange}
                 />
+                {errors["thumbnail"] && (
+                  <p className="text-red-500 text-sm">{errors["thumbnail"]}</p>
+                )}
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-xl pl-3 font-medium text-gray-700">
                   Mô tả
                 </label>
                 <textarea
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                  name="description"
                   value={formData.description}
                   placeholder="Nhập mô tả sản phẩm"
                   rows="4"
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
+                  onChange={handleChange}
                 ></textarea>
+                {errors["description"] && (
+                  <p className="text-red-500 text-sm">
+                    {errors["description"]}
+                  </p>
+                )}
               </div>
 
               {formData.thumbnail && (
@@ -366,9 +333,6 @@ const ProductModal = ({ open, onClose, mode, product, onConfirm }) => {
             Hủy bỏ
           </button>
           <button
-            // onClick={() => {
-            //   isDelete ? onConfirm(product.id) : onConfirm(formData);
-            // }}
             onClick={handleConfirm}
             className="px-6 py-2.5 cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
           >
