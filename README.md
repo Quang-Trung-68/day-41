@@ -19,6 +19,7 @@
 
 ```bash
 # Clone và cài đặt
+git clone https://github.com/Quang-Trung-68/day-41.git
 npm install
 
 # Chạy development
